@@ -32,6 +32,7 @@ namespace matplotlibcpp {
 			PyObject *s_python_function_grid;
 			PyObject *s_python_empty_tuple;
       PyObject *s_python_function_annotate;
+      PyObject *s_python_function_close;
 
 			/* For now, _interpreter is implemented as a singleton since its currently not possible to have
 			   multiple independent embedded python interpreters without patching the python source code
@@ -77,8 +78,9 @@ namespace matplotlibcpp {
 				s_python_function_xlim = PyObject_GetAttrString(pymod, "xlim");
 				s_python_function_save = PyObject_GetAttrString(pylabmod, "savefig");
 				s_python_function_annotate = PyObject_GetAttrString(pymod,"annotate");
+        s_python_function_close = PyObject_GetAttrString(pymod,"close");
 
-				if(        !s_python_function_show
+				if(   !s_python_function_show
 						|| !s_python_function_figure
 						|| !s_python_function_plot
 						|| !s_python_function_subplot
@@ -92,6 +94,7 @@ namespace matplotlibcpp {
 						|| !s_python_function_xlim
 						|| !s_python_function_save
             || !s_python_function_annotate
+            || !s_python_function_close
             )
 				{ throw std::runtime_error("Couldn't find required function!"); }
 
@@ -109,6 +112,7 @@ namespace matplotlibcpp {
 					|| !PyFunction_Check(s_python_function_grid)
 					|| !PyFunction_Check(s_python_function_xlim)
 					|| !PyFunction_Check(s_python_function_save)
+          || !PyFunction_Check(s_python_function_close)
           )
 				{ throw std::runtime_error("Python object is unexpectedly not a PyFunction."); }
 
@@ -329,11 +333,17 @@ namespace matplotlibcpp {
   inline void figure(){
 		PyObject* res = PyObject_CallObject(detail::_interpreter::get().s_python_function_figure, detail::_interpreter::get().s_python_empty_tuple);
 		if(!res) throw std::runtime_error("Call to figure() failed.");
-
 		Py_DECREF(res);
-  
   }
-    inline void legend() {
+  
+  inline void close(){
+		PyObject* res = PyObject_CallObject(detail::_interpreter::get().s_python_function_close, detail::_interpreter::get().s_python_empty_tuple);
+		if(!res) throw std::runtime_error("Call to close() failed.");
+
+		Py_DECREF(res);  
+  }
+  
+  inline void legend() {
 		PyObject* res = PyObject_CallObject(detail::_interpreter::get().s_python_function_legend, detail::_interpreter::get().s_python_empty_tuple);
 		if(!res) throw std::runtime_error("Call to legend() failed.");
 
@@ -377,8 +387,8 @@ namespace matplotlibcpp {
   
   double * xlim()
   {
-    PyObject* args = PyTuple_New(0);
-		PyObject* res = PyObject_CallObject(detail::_interpreter::get().s_python_function_xlim, args);
+
+		PyObject* res = PyObject_CallObject(detail::_interpreter::get().s_python_function_xlim, detail::_interpreter::get().s_python_empty_tuple);
     PyObject * left = PyTuple_GetItem(res,0);
     PyObject * right = PyTuple_GetItem(res,1);
     double * arr = new double[2];
@@ -393,8 +403,7 @@ namespace matplotlibcpp {
   
   double * ylim()
   {
-    PyObject* args = PyTuple_New(0);
-		PyObject* res = PyObject_CallObject(detail::_interpreter::get().s_python_function_ylim, args);
+		PyObject* res = PyObject_CallObject(detail::_interpreter::get().s_python_function_ylim, detail::_interpreter::get().s_python_empty_tuple);
     PyObject * left = PyTuple_GetItem(res,0);
     PyObject * right = PyTuple_GetItem(res,1);
     double * arr = new double[2];
@@ -499,7 +508,7 @@ namespace matplotlibcpp {
 		PyObject* res = PyObject_CallObject(detail::_interpreter::get().s_python_function_save, args);
 		if(!res) throw std::runtime_error("Call to save() failed.");
 
-		Py_DECREF(pyfilename);
+
 		Py_DECREF(args);
 		Py_DECREF(res);
 	}
